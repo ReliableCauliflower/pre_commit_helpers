@@ -10,10 +10,15 @@ List<PackageData> getPackagesData({
   required String currentPath,
   List<String> additionalPaths = const [],
   List<String> ignorePaths = const [],
+  List<String> ignorePatterns = const [],
 }) {
   final basePubspecPath = getPubspecPath(currentPath);
   final packagesDartFiles = <String, List<File>>{
-    basePubspecPath: _getPackageBaseFiles(currentPath),
+    basePubspecPath: _getPackageBaseFiles(
+      currentPath,
+      ignorePatterns: ignorePatterns,
+      ignorePaths: ignorePaths,
+    ),
   };
 
   void addFile(String pubspecPath, File file) {
@@ -34,7 +39,11 @@ List<PackageData> getPackagesData({
         filePath: pubspecPath,
         ignorePaths: ignorePaths,
       )) {
-        packagesDartFiles[pubspecPath] = _getPackageBaseFiles(file.parent.path);
+        packagesDartFiles[pubspecPath] = _getPackageBaseFiles(
+          file.parent.path,
+          ignorePatterns: ignorePatterns,
+          ignorePaths: ignorePaths,
+        );
       }
     },
     onDartFile: (file, pubspecPath) {
@@ -43,6 +52,7 @@ List<PackageData> getPackagesData({
         packagePath: packagePath,
         filePath: file.path,
         ignorePaths: ignorePaths,
+        ignorePatterns: ignorePatterns,
       )) {
         addFile(pubspecPath, file);
       }
@@ -59,26 +69,6 @@ List<PackageData> getPackagesData({
   }
 
   return pubspecFilesData;
-}
-
-bool _isIgnore({
-  required String packagePath,
-  required String filePath,
-  required List<String> ignorePaths,
-}) {
-  String fileRelativePath = packagePath.replaceFirst(packagePath, '');
-  if (fileRelativePath.startsWith(separator)) {
-    fileRelativePath = fileRelativePath.substring(1);
-  }
-  for (String ignorePath in ignorePaths) {
-    if (ignorePath.startsWith(separator)) {
-      ignorePath = ignorePath.substring(1);
-    }
-    if (fileRelativePath.startsWith(ignorePath)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 void _handleAdditionalPaths({
@@ -124,7 +114,11 @@ void _handleAdditionalPaths({
   }
 }
 
-List<File> _getPackageBaseFiles(String packagePath) {
+List<File> _getPackageBaseFiles(
+  String packagePath, {
+  List<String> ignorePaths = const [],
+  List<String> ignorePatterns = const [],
+}) {
   String getSubDir(String subDirName) {
     return '$packagePath$separator$subDirName';
   }
@@ -136,7 +130,46 @@ List<File> _getPackageBaseFiles(String packagePath) {
     ..._readDir(getSubDir('tests')),
     ..._readDir(getSubDir('test_driver')),
     ..._readDir(getSubDir('integration_test')),
-  ].cast<File>();
+  ].cast<File>().where((file) {
+    final filePath = file.path;
+    return !_isIgnore(
+      packagePath: packagePath,
+      filePath: filePath,
+      ignorePaths: ignorePaths,
+      ignorePatterns: ignorePatterns,
+    );
+  }).toList();
+}
+
+bool _isIgnore({
+  required String packagePath,
+  required String filePath,
+  List<String> ignorePaths = const [],
+  List<String> ignorePatterns = const [],
+}) {
+  String fileRelativePath = packagePath.replaceFirst(packagePath, '');
+  if (fileRelativePath.startsWith(separator)) {
+    fileRelativePath = fileRelativePath.substring(1);
+  }
+  for (String ignorePath in ignorePaths) {
+    if (ignorePath.startsWith(separator)) {
+      ignorePath = ignorePath.substring(1);
+    }
+    if (fileRelativePath.startsWith(ignorePath)) {
+      return true;
+    }
+  }
+  for (String ignorePattern in ignorePatterns) {
+    try {
+      final regexp = RegExp(ignorePattern);
+      if (regexp.hasMatch(basename(filePath))) {
+        return true;
+      }
+    } catch (e) {
+      continue;
+    }
+  }
+  return false;
 }
 
 List<FileSystemEntity> _readDir(
