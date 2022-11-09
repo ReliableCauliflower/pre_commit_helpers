@@ -1,12 +1,12 @@
 import 'dart:io';
 
 import 'package:path/path.dart';
-import 'models/pubspec_file_data.dart';
+import 'models/package_data.dart';
 
 /// Get the project pubspec file(s) and a list of related dart files. The
 /// current algorithm assumes that pubspec.yaml files do not exist in the
 /// same folder with dart files
-List<PubspecFileData> pubspecFiles({
+List<PackageData> getPackageData({
   required String currentPath,
   required List<String> additionalPaths,
 }) {
@@ -63,12 +63,12 @@ List<PubspecFileData> pubspecFiles({
 
   handleAdditionalPaths(packagePath: currentPath);
 
-  final List<PubspecFileData> pubspecFilesData = [];
+  final List<PackageData> pubspecFilesData = [];
 
   for (final entry in packagesDartFiles.entries) {
-    pubspecFilesData.add(PubspecFileData(
-      file: File(entry.key),
-      packageFiles: entry.value,
+    pubspecFilesData.add(PackageData(
+      pubspecFile: File(entry.key),
+      dartFiles: entry.value,
     ));
   }
 
