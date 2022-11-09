@@ -31,6 +31,7 @@ List<PackageData> getPackagesData({
 
   _handleAdditionalPaths(
     packagePath: currentPath,
+    additionalPaths: additionalPaths,
     onPubspecFile: (file) {
       final pubspecPath = file.path;
       final packagePath = dirname(pubspecPath);
