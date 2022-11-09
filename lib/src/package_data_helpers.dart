@@ -6,7 +6,7 @@ import 'models/package_data.dart';
 /// Get the project pubspec file(s) and a list of related dart files. The
 /// current algorithm assumes that pubspec.yaml files do not exist in the
 /// same folder with dart files
-List<PackageData> getPackageData({
+List<PackageData> getPackagesData({
   required String currentPath,
   required List<String> additionalPaths,
 }) {
