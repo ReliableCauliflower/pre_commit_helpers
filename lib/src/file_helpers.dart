@@ -107,7 +107,13 @@ void _handleAdditionalPaths({
       if (fileEntity is File) {
         if (_isPubspecFile(fileEntityPath)) {
           onPubspecFile?.call(fileEntity);
-          _handleAdditionalPaths(packagePath: dirPath);
+          _handleAdditionalPaths(
+            packagePath: dirPath,
+            onPubspecFile: onPubspecFile,
+            onDartFile: onDartFile,
+            additionalPaths: additionalPaths,
+            ignorePaths: ignorePaths,
+          );
           return;
         } else {
           onDartFile?.call(fileEntity, pubspecPath);
